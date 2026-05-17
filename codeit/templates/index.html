@@ -68,9 +68,24 @@
                 <div class="relative">
                     <select id="modelSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-4 pr-10 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-100 appearance-none">
                         <option value="qwen2.5-coder:14b-instruct">qwen2.5-coder:14b-instruct (Recommended)</option>
+                        <option value="qwen3:14b">qwen3:14b</option>
+                        <option value="qwen2.5-coder:latest">qwen2.5-coder:latest</option>
+                        <option value="qwen2.5:14b">qwen2.5:14b</option>
+                        <option value="qwen2.5:7b">qwen2.5:7b</option>
+                        <option value="qwen2.5vl:7b">qwen2.5vl:7b</option>
                         <option value="deepseek-r1:14b">deepseek-r1:14b</option>
+                        <option value="deepseek-r1:latest">deepseek-r1:latest</option>
                         <option value="codestral:latest">codestral:latest</option>
                         <option value="llama3.2:latest">llama3.2:latest</option>
+                        <option value="llama3.2-vision:11b">llama3.2-vision:11b</option>
+                        <option value="llama3.2-vision:latest">llama3.2-vision:latest</option>
+                        <option value="hermes3:8b">hermes3:8b</option>
+                        <option value="mistral-small:latest">mistral-small:latest</option>
+                        <option value="gpt-oss:20b">gpt-oss:20b</option>
+                        <option value="minicpm-v:latest">minicpm-v:latest</option>
+                        <option value="gemma3:latest">gemma3:latest</option>
+                        <option value="gemma3:4b">gemma3:4b</option>
+                        <option value="llava:7b">llava:7b</option>
                     </select>
                     <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-500">
                         <i class="fa-solid fa-chevron-down text-xs"></i>
@@ -294,7 +309,6 @@
                     const textChunk = decoder.decode(value);
                     finishedNotebookData += textChunk;
                     
-                    // Regex Stream Cleaner: Removes JSON formatting for clean UI rendering
                     let cleanText = textChunk
                         .replace(/\\n/g, '\n')
                         .replace(/\\"/g, '"')
