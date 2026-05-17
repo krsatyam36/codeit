@@ -42,7 +42,7 @@ async def convert_arxiv(url: str = Query(...), model: str = Query("qwen2.5-coder
     try:
         paper_data = await pdf_processor.fetch_from_arxiv(url)
         return StreamingResponse(response_stream_generator(paper_data, model), media_type="text/plain")
-    exception as e:
+    except Exception as e:
         raise HTTPException(status_code=500, detail=f"ArXiv Error: {str(e)}")
 
 @app.post("/api/run")
