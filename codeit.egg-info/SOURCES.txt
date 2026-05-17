@@ -1,0 +1,14 @@
+setup.py
+codeit/__init__.py
+codeit/cli.py
+codeit/main.py
+codeit.egg-info/PKG-INFO
+codeit.egg-info/SOURCES.txt
+codeit.egg-info/dependency_links.txt
+codeit.egg-info/entry_points.txt
+codeit.egg-info/requires.txt
+codeit.egg-info/top_level.txt
+codeit/services/__init__.py
+codeit/services/notebook_builder.py
+codeit/services/ollama_client.py
+codeit/services/pdf_processor.py

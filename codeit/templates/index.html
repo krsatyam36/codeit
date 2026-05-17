@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codeit // Local AI Compiler</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* tailwind slate-950 */
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,0.1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,0.1) 0, transparent 50%);
+            color: #f8fafc;
+            min-height: 100vh;
+        }
+
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Glassmorphism utilities */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Terminal Scrollbar */
+        #terminalStream::-webkit-scrollbar { width: 8px; }
+        #terminalStream::-webkit-scrollbar-track { background: #000; }
+        #terminalStream::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        
+        /* Custom Animations */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(99, 102, 241, 0.6); }
+        }
+        .btn-glow { animation: pulse-glow 3s infinite; }
+    </style>
+</head>
+<body class="flex flex-col">
+
+    <header class="border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-bolt text-indigo-500 text-xl"></i>
+                <h1 class="text-xl font-bold tracking-tight text-slate-100">Codeit<span class="text-indigo-500">.</span></h1>
+            </div>
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span class="text-xs font-medium text-emerald-400">Local Node Active</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto w-full px-6 py-12 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <div class="lg:col-span-5 space-y-6">
+            <div>
+                <h2 class="text-3xl font-bold text-white mb-2">Research to Code</h2>
+                <p class="text-slate-400 text-sm leading-relaxed">Compile mathematical text and PDF algorithms straight into runnable PyTorch Jupyter Notebooks using local LLMs.</p>
+            </div>
+
+            <div class="glass-panel rounded-2xl p-1">
+                <div class="grid grid-cols-2 gap-1 p-1 bg-slate-900/50 rounded-xl mb-4">
+                    <button id="tab-pdf" onclick="switchTab('pdf')" class="py-2.5 text-sm font-semibold rounded-lg bg-slate-800 text-white shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
+                        <i class="fa-regular fa-file-pdf"></i> Upload PDF
+                    </button>
+                    <button id="tab-arxiv" onclick="switchTab('arxiv')" class="py-2.5 text-sm font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all duration-200 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-link"></i> arXiv URL
+                    </button>
+                </div>
+
+                <div class="p-5">
+                    <div id="panel-pdf" class="space-y-4 transition-all">
+                        <div id="dropzone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 bg-slate-900/30 rounded-xl p-8 text-center cursor-pointer transition-all duration-200 group">
+                            <input type="file" id="fileInput" accept=".pdf" class="hidden" />
+                            <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-cloud-arrow-up text-indigo-400 text-xl"></i>
+                            </div>
+                            <p class="text-slate-300 font-medium mb-1">Drag & drop your paper</p>
+                            <p class="text-xs text-slate-500">or click to browse local files (Max 25MB)</p>
+                        </div>
+                        
+                        <div id="file-metadata" class="hidden flex items-center justify-between bg-indigo-500/10 border border-indigo-500/20 p-3 rounded-lg">
+                            <div class="flex items-center gap-3 overflow-hidden">
+                                <i class="fa-solid fa-file-pdf text-indigo-400 text-lg"></i>
+                                <span id="file-name" class="text-sm text-indigo-100 font-medium truncate"></span>
+                            </div>
+                            <button onclick="clearFile()" class="text-slate-400 hover:text-red-400 transition-colors p-1">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="panel-arxiv" class="hidden space-y-4">
+                        <div class="space-y-2">
+                            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Target URL</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fa-solid fa-magnifying-glass text-slate-500"></i>
+                                </div>
+                                <input type="text" id="arxivUrl" placeholder="https://arxiv.org/abs/..." class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-100 transition-all placeholder:text-slate-600" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button id="generateBtn" onclick="startCompilation()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 px-6 rounded-xl transition-all btn-glow flex items-center justify-center gap-2 group">
+                <i class="fa-solid fa-microchip group-hover:rotate-12 transition-transform"></i>
+                <span>COMPILE NOTEBOOK</span>
+            </button>
+        </div>
+
+        <div class="lg:col-span-7 h-full flex flex-col">
+            <div id="statusCard" class="glass-panel rounded-2xl flex flex-col flex-grow overflow-hidden opacity-50 transition-opacity duration-300 min-h-[500px]">
+                
+                <div class="bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
+                    <div class="flex gap-2">
+                        <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="spinner" class="hidden animate-spin w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full"></span>
+                        <span class="text-xs font-medium text-slate-400 mono tracking-wider">qwen2.5-coder:14b</span>
+                    </div>
+                </div>
+
+                <div class="h-1 w-full bg-slate-900">
+                    <div id="progressBar" class="h-full bg-indigo-500 w-0 transition-all duration-500 ease-out shadow-[0_0_10px_rgba(99,102,241,0.8)]"></div>
+                </div>
+
+                <div class="px-5 pt-4 pb-2">
+                    <p id="statusMsg" class="text-sm font-medium text-indigo-300 flex items-center gap-2">
+                        <i class="fa-solid fa-angle-right text-slate-500"></i>
+                        <span id="statusText">Awaiting input...</span>
+                    </p>
+                </div>
+
+                <div class="bg-[#050505] flex-grow p-5 overflow-y-auto relative" id="terminalWrapper">
+                    <pre id="terminalStream" class="mono text-[13px] leading-relaxed text-emerald-400 whitespace-pre-wrap break-words"></pre>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        let currentMode = 'pdf';
+        const fileInput = document.getElementById('fileInput');
+        const dropzone = document.getElementById('dropzone');
+        
+        // UI Elements
+        const statusCard = document.getElementById('statusCard');
+        const statusText = document.getElementById('statusText');
+        const progressBar = document.getElementById('progressBar');
+        const terminalStream = document.getElementById('terminalStream');
+        const generateBtn = document.getElementById('generateBtn');
+        const spinner = document.getElementById('spinner');
+
+        function switchTab(mode) {
+            currentMode = mode;
+            const btnPdf = document.getElementById('tab-pdf');
+            const btnArxiv = document.getElementById('tab-arxiv');
+            
+            if (mode === 'pdf') {
+                btnPdf.className = "py-2.5 text-sm font-semibold rounded-lg bg-slate-800 text-white shadow-sm transition-all duration-200 flex items-center justify-center gap-2";
+                btnArxiv.className = "py-2.5 text-sm font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all duration-200 flex items-center justify-center gap-2";
+                document.getElementById('panel-pdf').classList.remove('hidden');
+                document.getElementById('panel-arxiv').classList.add('hidden');
+            } else {
+                btnArxiv.className = "py-2.5 text-sm font-semibold rounded-lg bg-slate-800 text-white shadow-sm transition-all duration-200 flex items-center justify-center gap-2";
+                btnPdf.className = "py-2.5 text-sm font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all duration-200 flex items-center justify-center gap-2";
+                document.getElementById('panel-arxiv').classList.remove('hidden');
+                document.getElementById('panel-pdf').classList.add('hidden');
+            }
+        }
+
+        // Drag and Drop Logic
+        dropzone.addEventListener('click', () => fileInput.click());
+        dropzone.addEventListener('dragover', (e) => { 
+            e.preventDefault(); 
+            dropzone.classList.add('border-indigo-500', 'bg-slate-800/50'); 
+        });
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('border-indigo-500', 'bg-slate-800/50');
+        });
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('border-indigo-500', 'bg-slate-800/50');
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                updateFileMetadata();
+            }
+        });
+        fileInput.addEventListener('change', updateFileMetadata);
+
+        function updateFileMetadata() {
+            if (fileInput.files.length > 0) {
+                document.getElementById('file-name').innerText = fileInput.files[0].name;
+                document.getElementById('file-metadata').classList.remove('hidden');
+                document.getElementById('dropzone').classList.add('hidden');
+            }
+        }
+
+        function clearFile() {
+            fileInput.value = '';
+            document.getElementById('file-metadata').classList.add('hidden');
+            document.getElementById('dropzone').classList.remove('hidden');
+        }
+
+        function typeLine(text, className = "text-emerald-400") {
+            const span = document.createElement('span');
+            span.className = className;
+            span.innerText = text;
+            terminalStream.appendChild(span);
+            document.getElementById('terminalWrapper').scrollTop = terminalStream.scrollHeight;
+        }
+
+        async function startCompilation() {
+            terminalStream.innerHTML = '';
+            statusCard.classList.remove('opacity-50');
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> <span>COMPILING...</span>';
+            generateBtn.classList.remove('btn-glow');
+            generateBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            spinner.classList.remove('hidden');
+
+            let response;
+            try {
+                if (currentMode === 'pdf') {
+                    if (fileInput.files.length === 0) {
+                        alert('Please attach a PDF file.');
+                        resetUI();
+                        return;
+                    }
+                    statusText.innerText = "Extracting text and equations from PDF...";
+                    progressBar.style.width = "25%";
+                    typeLine("> INIT: PDF parsing engine started...\n", "text-indigo-400");
+                    
+                    const formData = new FormData();
+                    formData.append('file', fileInput.files[0]);
+                    response = await fetch('/api/convert/pdf', { method: 'POST', body: formData });
+                } else {
+                    const url = document.getElementById('arxivUrl').value.trim();
+                    if (!url) {
+                        alert('Please specify an arXiv URL.');
+                        resetUI();
+                        return;
+                    }
+                    statusText.innerText = "Fetching arXiv metadata and payload...";
+                    progressBar.style.width = "25%";
+                    typeLine(`> INIT: Fetching ${url}...\n`, "text-indigo-400");
+                    
+                    response = await fetch(`/api/convert/arxiv?url=${encodeURIComponent(url)}`, { method: 'POST' });
+                }
+
+                if (!response.ok) throw new Error("Backend pipeline failure.");
+
+                progressBar.style.width = "45%";
+                statusText.innerText = "Streaming model generation blocks...";
+                typeLine("> SUCCESS: Content extracted.\n> LLM: Routing to qwen2.5-coder:14b-instruct...\n> LLM: Generating structural blocks...\n\n", "text-emerald-400 font-bold");
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let finishedNotebookData = "";
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    
+                    const textChunk = decoder.decode(value);
+                    finishedNotebookData += textChunk;
+                    
+                    // Live echo
+                    typeLine(textChunk);
+                    progressBar.style.width = "75%";
+                }
+
+                progressBar.style.width = "100%";
+                statusText.innerText = "Compilation complete! Downloading notebook...";
+                typeLine("\n\n> SYSTEM: Notebook successfully assembled. Triggering download.", "text-indigo-400 font-bold");
+
+                const blob = new Blob([finishedNotebookData], { type: 'application/x-ipynb+json' });
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `codeit_${Date.now()}.ipynb`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+            } catch (err) {
+                statusText.innerText = `Error: ${err.message}`;
+                statusText.classList.replace('text-indigo-300', 'text-red-400');
+                progressBar.classList.replace('bg-indigo-500', 'bg-red-500');
+                typeLine(`\n[FATAL ERROR] ${err.message}`, "text-red-500 font-bold");
+            } finally {
+                setTimeout(resetUI, 3000); // Reset UI after 3 seconds
+            }
+        }
+
+        function resetUI() {
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = '<i class="fa-solid fa-microchip group-hover:rotate-12 transition-transform"></i> <span>COMPILE NOTEBOOK</span>';
+            generateBtn.classList.add('btn-glow');
+            generateBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+            spinner.classList.add('hidden');
+            
+            // Only reset success states, keep error states visible if they occurred
+            if(statusText.innerText.includes("complete")) {
+                statusText.innerText = "Awaiting input...";
+                progressBar.style.width = "0%";
+                statusCard.classList.add('opacity-50');
+            }
+        }
+    </script>
+</body>
+</html>
