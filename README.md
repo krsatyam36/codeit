@@ -56,23 +56,9 @@ Before deploying the local service node, confirm your system matches this state:
 
     The runtime binds to http://127.0.0.1:8080 by default. Override port bindings using codeit serve --port <port_number> if a socket clash occurs.
 
-📁 Project Structure
-Plaintext
-
-codeit/
-├── codeit/
-│   ├── __init__.py
-│   ├── cli.py                 # CLI interface controller
-│   ├── main.py                # FastAPI routing matrix and execution entrypoints
-│   ├── services/
-│   │   ├── sandbox_engine.py  # Ephemeral sandbox creation, AST mapping, & execution
-│   │   ├── ollama_client.py   # Context composition and Ollama REST streaming
-│   │   └── pdf_processor.py   # PyMuPDF ingestion and arXiv web scraping
-│   └── templates/
-│       └── index.html         # Interactive Split-Pane Workspace & UI Layout
-├── requirements.txt
-├── setup.py
-└── README.md
+Created By
+- Kumar Satyam
+- kumarsatyam3135@gmail.com
 
 📝 License
 
