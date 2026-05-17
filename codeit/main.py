@@ -10,7 +10,7 @@ from codeit.services.ollama_client import OllamaClient
 from codeit.services.notebook_builder import NotebookBuilder
 from codeit.services.sandbox_engine import SandboxEngine
 
-app = FastAPI(title="Codeit IDE\ & Execution Backend")
+app = FastAPI(title="Codeit IDE & Execution Backend")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
@@ -50,13 +50,13 @@ async def execute_code(code: str = Form(...)):
     """Executes raw Python code in the ephemeral sandbox."""
     try:
         stdout, stderr, retcode = await sandbox_engine.execute(code)
-        return JSONResponse({"
+        return JSONResponse({
             "stdout": stdout,
             "stderr": stderr,
             "exit_code": retcode
         })
     except Exception as e:
-        return JSONResponse({"
+        return JSONResponse({
             "stdout": "",
             "stderr": f'[CRITICAL ENGINE FAILURE] {str(e)}',
             "exit_code": 500
