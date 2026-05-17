@@ -15,7 +15,7 @@ The implementation MUST focus on CPU execution and reduced/mock data scaling so 
 Paper Title: {paper_data['title']}
 
 Raw Excerpts / Key Text:
-Gpaper_data['text'][:6000]}
+{paper_data['text'][:6000]}
 
 Extracted Key Math/Equations:
 {', '.join(paper_data['equations'])}
