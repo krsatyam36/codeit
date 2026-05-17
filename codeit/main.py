@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, UploadFile, File, Query, HTTPException
+from fastapi import FastAPI, UploadFile, File, Query, Form, HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.requests import Request
@@ -22,28 +22,28 @@ notebook_builder = NotebookBuilder()
 async def serve_dashboard_ui(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
 
-async def response_stream_generator(paper_data: dict) -> AsyncGenerator[str, None]:
+async def response_stream_generator(paper_data: dict, model: str) -> AsyncGenerator[str, None]:
     accumulated_response_text = ""
-    async for text_chunk in ollama_client.generate_notebook_structure(paper_data):
+    async for text_chunk in ollama_client.generate_notebook_structure(paper_data, model):
         accumulated_response_text += text_chunk
         yield text_chunk
-
+        
     notebook_file_content = notebook_builder.build_from_json_string(accumulated_response_text)
     yield f"\n\n{notebook_file_content}"
 
 @app.post("/api/convert/pdf")
-async def convert_pdf(file: UploadFile = File(...)):
+async def convert_pdf(file: UploadFile = File(...), model: str = Form("qwen2.5-coder:14b-instruct")):
     try:
         pdf_bytes = await file.read()
         paper_data = await pdf_processor.extract_from_bytes(pdf_bytes)
-        return StreamingResponse(response_stream_generator(paper_data), media_type="text/plain")
+        return StreamingResponse(response_stream_generator(paper_data, model), media_type="text/plain")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"PDF extraction pipeline breakdown: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"PDF Error: {str(e)}")
 
 @app.post("/api/convert/arxiv")
-async def convert_arxiv(url: str = Query(...)):
+async def convert_arxiv(url: str = Query(...), model: str = Query("qwen2.5-coder:14b-instruct")):
     try:
         paper_data = await pdf_processor.fetch_from_arxiv(url)
-        return StreamingResponse(response_stream_generator(paper_data), media_type="text/plain")
+        return StreamingResponse(response_stream_generator(paper_data, model), media_type="text/plain")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"arXiv asset translation pipeline breakdown: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"ArXiv Error: {str(e)}")
